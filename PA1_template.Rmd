@@ -1,25 +1,108 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
+title: "peer assesment 1"
+output:
+  pdf_document: default
   html_document:
-    keep_md: true
+    keep_md: yes
 ---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+1. Code for reading in the dataset and/or processing the data
+```{r first chunk}
+#load data
+data <- read.csv('activity.csv')
+#complete cases
+activity <- data[complete.cases(data), ]
+head(activity)
+```
+2.Histogram of the total number of steps taken each day
+```{r second chunk}
+#calculate steps by day
+stepsbyday <- aggregate(steps ~ date, activity, sum)
+stepsbyday
+```
+```{r histogram1, echo=TRUE}
+# Histogram of steps per day
+hist(stepsbyday$steps, main = "Total number of steps per day", xlab = "Steps per day")
+```
+3.Mean and median number of steps taken each day
+```{r third chunk}
+#calculate mean and median steps by day
+mean(stepsbyday$steps)
+median(stepsbyday$steps)
+```
+4. Time series plot of the average number of steps taken
+```{r fourth chunk, echo=TRUE }
+#calculate mean step by interval
+meanstepsinterval <- aggregate(steps ~ interval, activity, mean)
+```
+
+```{r time series 1, echo=TRUE}
+#Time series plot if the average number of steps taken
+plot(meanstepsinterval$interval, meanstepsinterval$steps, type='l', main="Time series plot of the average number of steps taken", xlab="Interval", ylab="Mean number of steps")
+
+```
+
+5.The 5-minute interval that, on average, contains the maximum number of steps
+```{r ad chunk}
+maximunsteps<-which.max(meanstepsinterval$steps)
+maximuninterval<-meanstepsinterval[maximunsteps, ]
+maximunsteps
+maximuninterval
+
+```
+6.Code to describe and show a strategy for imputing missing data
+```{r fith chunk}
+#1. Calculate and report the total number of missing values in the dataset
+Missing <- length(which(is.na(activity$steps)))
 
 
-## Loading and preprocessing the data
+#2. Devise a strategy for filling in all of the missing values in the dataset.
+
+#3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+Imputed <- activity
+for (i in 1:nrow(Imputed)) {
+    if(is.na(Imputed$steps[i])) {
+        val <- meanstepsinterval$steps[which(meanstepsinterval$interval == Imputed$interval[i])]
+        Imputed$steps[i] <- val 
+    }
+}
+
+#calculate steps by day
+stepsbydayI <- aggregate(steps ~ date, Imputed, sum)
+```
+
+7.Histogram of the total number of steps taken each day after missing values are imputed
+```{r histogram2, echo=TRUE}
+# Histogram of steps per day
+hist(stepsbydayI$steps, main = "Total number of steps per day (imputed)", xlab = "Steps per day")
+```
+```{r chunk bis, echo=TRUE}
+
+mean(stepsbydayI$steps)
+median(stepsbydayI$steps)
+
+```
+
+8.Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+```{r sixth chunk}
+#Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
 
 
+Imputed$date <-  ifelse(as.POSIXlt(Imputed$date)$wday %in% c(0,6), 'weekend', 'weekday')
 
-## What is mean total number of steps taken per day?
+meanImputed <- aggregate(steps ~ interval + date, data=Imputed, mean)
 
+```
 
+```{r time series 2, echo=TRUE}
 
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
+#Make a panel plot containing a time series plot (i.e. \color{red}{\verb|type = "l"|}type="l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+library(ggplot2)
+ggplot (meanImputed, aes(interval, steps)) + geom_line() + xlab("5 minute interval") + ylab("average number of steps all weekday days or weekend days ")+ labs(title= "Time series plot by weekday days or weekend days") + facet_grid(date ~ .)
+
+    
+```
